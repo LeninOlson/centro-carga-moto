@@ -6,17 +6,6 @@
     <title>Centro de Carga para Motocicleta Eléctrica - SPA Interactiva</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Visualization & Content Choices: 
-        - Battery/Charger Specs (Inform): Styled lists/tables. Justification: Clarity. HTML/CSS.
-        - Charging Stages (Organize/Inform): Interactive description (JS show/hide). Justification: Step-by-step understanding. HTML/CSS/JS.
-        - BMS Functions (Inform): Clickable list (JS show/hide details). Justification: Digestible information. HTML/CSS/JS.
-        - BMS Integration Diagram (Organize): Block diagram. Justification: Visual overview. HTML/CSS.
-        - Charging Time Calc (Interact/Inform): JS calculation, Chart.js bar chart for progress. Justification: User engagement, practical info. Chart.js/JS.
-        - Safety (Inform): Styled list. Justification: Critical info. HTML/CSS.
-        - Ask AI Expert (Interact/Inform): Chatbot interface with text input and response display. Justification: Dynamic Q&A, enhanced user understanding. Gemini API/JS.
-        - Personalized Maintenance Tips (Inform): Button to generate tips, display area for text. Justification: Actionable advice, direct application of LLM. Gemini API/JS.
-        CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. 
-    -->
     <style>
         body { font-family: 'Inter', sans-serif; }
         .tab-content { display: none; }
@@ -69,6 +58,93 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* Styles for Interactive Charging Stage Visualizer */
+        .stage-visualizer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 150px;
+            background-color: #f0fdf4; /* emerald-50 */
+            border: 1px solid #d1fae5; /* emerald-100 */
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+            font-weight: 600;
+        }
+        .stage-visualizer .indicator {
+            width: 80%;
+            height: 20px;
+            border-radius: 10px;
+            background-color: #e0e0e0;
+            margin-bottom: 12px;
+            overflow: hidden;
+            position: relative;
+        }
+        .stage-visualizer .indicator::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 0%;
+            background-color: #10b981; /* emerald-500 */
+            transition: width 0.5s ease-out;
+        }
+        .stage-visualizer.bulk .indicator::after { width: 40%; }
+        .stage-visualizer.absorption .indicator::after { width: 75%; }
+        .stage-visualizer.float .indicator::after { width: 100%; }
+        .stage-visualizer .graph-mock {
+            width: 100%;
+            height: 60px;
+            background-color: #ecfdf5; /* emerald-50 */
+            border: 1px solid #d1fae5; /* emerald-100 */
+            border-radius: 4px;
+            margin-top: 10px;
+            position: relative;
+        }
+        .stage-visualizer .graph-mock::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            background-color: #065f46; /* emerald-800 */
+            top: 50%;
+            left: 0;
+            transform: translateY(-50%);
+        }
+        .stage-visualizer.bulk .graph-mock::before { /* High stable current, rising voltage */
+            content: 'I high, V rising';
+            font-size: 0.75rem;
+            color: #065f46;
+            left: 50%;
+            top: 20%;
+            transform: translate(-50%, -50%);
+            width: auto;
+            background: none;
+        }
+        .stage-visualizer.absorption .graph-mock::before { /* Stable voltage, falling current */
+            content: 'V stable, I falling';
+            font-size: 0.75rem;
+            color: #065f46;
+            left: 50%;
+            top: 20%;
+            transform: translate(-50%, -50%);
+            width: auto;
+            background: none;
+        }
+        .stage-visualizer.float .graph-mock::before { /* Stable voltage, low current */
+            content: 'V stable, I very low';
+            font-size: 0.75rem;
+            color: #065f46;
+            left: 50%;
+            top: 20%;
+            transform: translate(-50%, -50%);
+            width: auto;
+            background: none;
+        }
+
     </style>
 </head>
 <body class="bg-stone-100 text-neutral-800 antialiased">
@@ -236,6 +312,57 @@
                     </div>
                 </div>
                 
+                <div class="bg-emerald-50 p-4 rounded-lg shadow mb-6">
+                    <h3 class="text-xl font-semibold text-emerald-700 mb-4">Herramientas Interactivas</h3>
+
+                    <div class="bg-white p-4 rounded-lg shadow mb-4">
+                        <h4 class="text-lg font-semibold text-emerald-600 mb-3">Calculador de Costo de Carga Eléctrica ⚡</h4>
+                        <p class="text-sm text-neutral-600 mb-3">Estima el costo de una carga completa para tu banco de baterías.</p>
+                        <div class="flex flex-col sm:flex-row items-center gap-4 mb-3">
+                            <label for="precioKWh" class="font-medium text-neutral-700">Precio Electricidad (USD/kWh):</label>
+                            <input type="number" id="precioKWh" min="0.01" step="0.01" value="0.10" class="p-2 border border-stone-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 w-28">
+                            <button onclick="calcularCostoCarga()" class="bg-emerald-600 text-white py-2 px-4 rounded-lg font-semibold shadow-md hover:bg-emerald-700 transition-colors">Calcular Costo</button>
+                        </div>
+                        <p id="costoCargaResultado" class="text-neutral-700 font-semibold"></p>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-lg shadow mb-4">
+                        <h4 class="text-lg font-semibold text-emerald-600 mb-3">Visualizador de Etapas de Carga 📈</h4>
+                        <p class="text-sm text-neutral-600 mb-3">Entiende cómo el cargador gestiona las fases de carga de tu batería de plomo-ácido.</p>
+                        <div id="charging-stage-visualizer" class="stage-visualizer transition-all duration-300 ease-in-out">
+                            <p id="stage-title" class="text-xl font-bold text-emerald-800">Carga Iniciada</p>
+                            <p id="stage-description" class="text-neutral-600 mt-2">Haz clic en "Siguiente Etapa" para comenzar el proceso de visualización.</p>
+                            <div class="indicator"></div>
+                            <div class="graph-mock"></div>
+                        </div>
+                        <button onclick="nextChargingStage()" class="bg-emerald-600 text-white py-2 px-4 rounded-lg font-semibold shadow-md hover:bg-emerald-700 transition-colors mt-4 w-full">Siguiente Etapa</button>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-lg shadow">
+                        <h4 class="text-lg font-semibold text-emerald-600 mb-3">Simulador de Impacto en Vida Útil de Batería 🔋</h4>
+                        <p class="text-sm text-neutral-600 mb-3">Comprende cómo tus hábitos de carga afectan la longevidad de tu batería.</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+                            <div>
+                                <label for="frecuenciaCarga" class="block text-sm font-medium text-neutral-700 mb-1">Frecuencia de Carga:</label>
+                                <select id="frecuenciaCarga" class="p-2 border border-stone-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 w-full">
+                                    <option value="diaria">Diaria (o casi)</option>
+                                    <option value="semanal">Semanal (1-3 veces)</option>
+                                    <option value="infrecuente">Infrecuente (cuando es necesario)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="profundidadDescarga" class="block text-sm font-medium text-neutral-700 mb-1">Profundidad de Descarga (%) antes de cargar:</label>
+                                <select id="profundidadDescarga" class="p-2 border border-stone-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 w-full">
+                                    <option value="20">Baja (aprox. 20%)</option>
+                                    <option value="50">Media (aprox. 50%)</option>
+                                    <option value="80">Alta (aprox. 80% o más)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button onclick="simularImpactoVidaUtil()" class="bg-emerald-600 text-white py-2 px-4 rounded-lg font-semibold shadow-md hover:bg-emerald-700 transition-colors w-full mb-3">Simular Impacto</button>
+                        <p id="impactoVidaUtilResultado" class="text-neutral-700 font-semibold"></p>
+                    </div>
+                </div>
                 <div class="bg-stone-50 p-4 rounded-lg shadow">
                     <h3 class="text-xl font-semibold text-emerald-600 mb-3">Consideraciones de Seguridad y Mantenimiento</h3>
                     <ul class="list-disc list-inside text-neutral-700 space-y-2">
@@ -312,6 +439,9 @@
         // Abrir la primera pestaña por defecto
         document.addEventListener('DOMContentLoaded', () => {
             document.querySelector('.tab-button').click();
+            // Inicializar calculador de carga y visualizador
+            calcularTiempoCarga();
+            resetChargingStageVisualizer(); // Reset visualizer on load
         });
 
         // Lógica para Expandir/Colapsar Detalles
@@ -451,7 +581,6 @@
                                     if (context.parsed.x !== null) {
                                         label += context.parsed.x.toFixed(1) + '%';
                                     }
-                                    return label;
                                 }
                             }
                         }
@@ -555,6 +684,109 @@
                 tipsLoading.classList.add('hidden');
                 tipsDisplay.scrollTop = tipsDisplay.scrollHeight;
             }
+        }
+
+        // --- Lógica para Nuevas Funcionalidades Interactivas ---
+
+        // 1. Calculador de Costo de Carga Eléctrica
+        function calcularCostoCarga() {
+            const energiaAlmacenadaKWh = 1.2; // kWh del banco de baterías
+            const eficienciaCargaBat = 0.85; // 85% de eficiencia para plomo-ácido
+            const energiaRequeridaKWh = energiaAlmacenadaKWh / eficienciaCargaBat; // Energía que el cargador debe entregar
+
+            const precioKWh = parseFloat(document.getElementById('precioKWh').value);
+            const costoCargaResultado = document.getElementById('costoCargaResultado');
+
+            if (isNaN(precioKWh) || precioKWh <= 0) {
+                costoCargaResultado.textContent = "Por favor, ingresa un precio válido por kWh.";
+                return;
+            }
+
+            const costoTotal = energiaRequeridaKWh * precioKWh;
+            costoCargaResultado.innerHTML = `Para cargar completamente la batería (requiere ${energiaRequeridaKWh.toFixed(2)} kWh de la red): <br>
+                                            Costo estimado por carga: <strong class="text-emerald-700">$${costoTotal.toFixed(2)} USD</strong>.`;
+        }
+        // Calcular al cargar con valor por defecto
+        document.addEventListener('DOMContentLoaded', calcularCostoCarga);
+
+
+        // 2. Visualizador Interactivo de Etapas de Carga
+        let currentStageIndex = 0;
+        const chargingStages = [
+            {
+                title: "Carga Iniciada",
+                description: "Haz clic en 'Siguiente Etapa' para comenzar el proceso de visualización de las fases de carga.",
+                class: ""
+            },
+            {
+                title: "Etapa 1: Carga Bulk (Corriente Constante)",
+                description: "El cargador entrega su corriente máxima (3A). El voltaje de la batería aumenta progresivamente. Esta fase repone la mayor parte de la energía.",
+                class: "bulk"
+            },
+            {
+                title: "Etapa 2: Carga de Absorción (Voltaje Constante)",
+                description: "El voltaje se mantiene constante (73.5V), mientras la corriente de carga disminuye gradualmente. La batería se acerca al 100% de carga.",
+                class: "absorption"
+            },
+            {
+                title: "Etapa 3: Carga de Flotación (Mantenimiento)",
+                description: "El voltaje se reduce o mantiene bajo, y la corriente es mínima. Esto compensa la autodescarga y mantiene la batería cargada sin sobrecargarla.",
+                class: "float"
+            }
+        ];
+
+        function resetChargingStageVisualizer() {
+            currentStageIndex = 0;
+            const visualizer = document.getElementById('charging-stage-visualizer');
+            document.getElementById('stage-title').textContent = chargingStages[0].title;
+            document.getElementById('stage-description').textContent = chargingStages[0].description;
+            visualizer.className = 'stage-visualizer transition-all duration-300 ease-in-out'; // Reset classes
+        }
+
+        function nextChargingStage() {
+            currentStageIndex = (currentStageIndex + 1) % chargingStages.length;
+            const stage = chargingStages[currentStageIndex];
+            const visualizer = document.getElementById('charging-stage-visualizer');
+
+            document.getElementById('stage-title').textContent = stage.title;
+            document.getElementById('stage-description').textContent = stage.description;
+            
+            // Remove previous stage classes and add current one
+            visualizer.className = 'stage-visualizer transition-all duration-300 ease-in-out ' + stage.class;
+        }
+
+        // 3. Simulador Básico de Impacto en la Vida Útil de la Batería
+        function simularImpactoVidaUtil() {
+            const frecuencia = document.getElementById('frecuenciaCarga').value;
+            const profundidad = document.getElementById('profundidadDescarga').value;
+            const resultadoP = document.getElementById('impactoVidaUtilResultado');
+
+            let mensaje = "El mantenimiento adecuado prolonga la vida de tu batería. Aquí hay recomendaciones basadas en tus hábitos:\n\n";
+
+            if (frecuencia === "diaria" && profundidad === "20") {
+                mensaje += "✨ **Carga diaria con descarga baja:** ¡Excelente! Mantener la descarga en niveles bajos es ideal para la vida útil de las baterías de plomo-ácido. Evita descargas profundas y el estrés en los ciclos.\n";
+            } else if (frecuencia === "diaria" && profundidad === "50") {
+                mensaje += "✅ **Carga diaria con descarga media:** Buena práctica. Aunque la descarga sea media, la carga diaria evita que la batería se quede mucho tiempo en estados de baja carga, lo cual es beneficioso.\n";
+            } else if (frecuencia === "diaria" && profundidad === "80") {
+                mensaje += "⚠️ **Carga diaria con descarga alta:** Esto puede reducir la vida útil. Las descargas profundas frecuentes estresan las baterías de plomo-ácido. Intenta recargar antes o considerar ciclos menos profundos si es posible.\n";
+            } else if (frecuencia === "semanal" && profundidad === "20") {
+                mensaje += "👍 **Carga semanal con descarga baja:** Es una buena práctica. La autodescarga es mínima y los ciclos son superficiales, lo que ayuda a preservar la batería. Considera una carga de flotación si no se usa por mucho tiempo.\n";
+            } else if (frecuencia === "semanal" && profundidad === "50") {
+                mensaje += "👌 **Carga semanal con descarga media:** Un equilibrio razonable. Es una práctica común. Asegúrate de que los ciclos completos de carga (hasta flotación) se realicen periódicamente para balancear la batería.\n";
+            } else if (frecuencia === "semanal" && profundidad === "80") {
+                mensaje += "❗ **Carga semanal con descarga alta:** Esto puede ser perjudicial a largo plazo. Las descargas profundas reducen los ciclos de vida de las baterías de plomo-ácido. Recargar más a menudo o considerar una capacidad de batería mayor si es posible.\n";
+            } else if (frecuencia === "infrecuente" && profundidad === "20") {
+                mensaje += "💡 **Carga infrecuente con descarga baja:** Si bien la descarga es baja, la autodescarga puede afectar la batería si pasa mucho tiempo sin recargarse. Es importante una carga de mantenimiento periódica para evitar la sulfatación.\n";
+            } else if (frecuencia === "infrecuente" && profundidad === "50") {
+                mensaje += "🛑 **Carga infrecuente con descarga media:** Esta combinación es de riesgo. La batería estará más tiempo en estados de carga parcial y sufrirá más autodescarga y posible sulfatación. Se recomienda cargar con más frecuencia.\n";
+            } else if (frecuencia === "infrecuente" && profundidad === "80") {
+                mensaje += "💀 **Carga infrecuente con descarga alta:** Esta es la situación más crítica para baterías de plomo-ácido y acortará drásticamente su vida útil. Evita dejar la batería en estados de descarga profunda por mucho tiempo. Carga inmediatamente después de cada uso y considera un mantenimiento de flotación si la motocicleta estará parada.\n";
+            } else {
+                mensaje += "No se pudo determinar un impacto específico con estas selecciones. Por favor, asegúrate de que tus hábitos de carga sean consistentes para prolongar la vida de tu batería.";
+            }
+            
+            // Formatear el mensaje con saltos de línea para mostrar correctamente en HTML
+            resultadoP.innerHTML = mensaje.replace(/\n/g, '<br>');
         }
     </script>
 </body>
