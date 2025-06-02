@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centro de Carga para Motocicleta Eléctrica - SPA Interactiva</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Visualization & Content Choices: 
+        - Battery/Charger Specs (Inform): Styled lists/tables. Justification: Clarity. HTML/CSS.
+        - Charging Stages (Organize/Inform): Interactive description (JS show/hide). Justification: Step-by-step understanding. HTML/CSS/JS.
+        - BMS Functions (Inform): Clickable list (JS show/hide details). Justification: Digestible information. HTML/CSS/JS.
+        - BMS Integration Diagram (Organize): Block diagram. Justification: Visual overview. HTML/CSS.
+        - Charging Time Calc (Interact/Inform): JS calculation, Chart.js bar chart for progress. Justification: User engagement, practical info. Chart.js/JS.
+        - Safety (Inform): Styled list. Justification: Critical info. HTML/CSS.
+        - Ask AI Expert (Interact/Inform): Chatbot interface with text input and response display. Justification: Dynamic Q&A, enhanced user understanding. Gemini API/JS.
+        - Personalized Maintenance Tips (Inform): Button to generate tips, display area for text. Justification: Actionable advice, direct application of LLM. Gemini API/JS.
+        CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. 
+    -->
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .tab-button.active { background-color: #059669; color: white; } /* emerald-600 */
+        .tab-button { background-color: #D1FAE5; color: #065F46; } /* emerald-100, emerald-800 */
+        .details-content { display: none; max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
+        .details-content.open { max-height: 1000px; /* Adjust as needed */ }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px; /* Tailwind max-w-2xl */
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px; /* Base height, can be responsive with Tailwind h-[] */
+            max-height: 400px;
+        }
+        @media (min-width: 768px) { /* md breakpoint */
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .chat-message {
+            padding: 8px 12px;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            max-width: 80%;
+        }
+        .chat-message.user {
+            background-color: #DBEAFE; /* blue-100 */
+            color: #1E40AF; /* blue-800 */
+            align-self: flex-end;
+            margin-left: auto;
+        }
+        .chat-message.ai {
+            background-color: #ECFDF5; /* emerald-50 */
+            color: #065F46; /* emerald-800 */
+            align-self: flex-start;
+            margin-right: auto;
+        }
+        .loading-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #059669; /* emerald-600 */
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-stone-100 text-neutral-800 antialiased">
+
+    <div class="container mx-auto p-4 sm:p-6 md:p-8 max-w-5xl">
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl sm:text-4xl font-bold text-emerald-700">Centro de Carga para Motocicleta Eléctrica</h1>
+            <p class="text-neutral-600 mt-2">Una aplicación interactiva para explorar el informe técnico.</p>
+        </header>
+
+        <nav class="mb-6 flex flex-wrap justify-center gap-2 sm:gap-3">
+            <button class="tab-button py-2 px-4 rounded-lg font-semibold shadow-md hover:bg-emerald-500 hover:text-white transition-colors active" onclick="openTab(event, 'resumen')">Resumen del Sistema</button>
+            <button class="tab-button py-2 px-4 rounded-lg font-semibold shadow-md hover:bg-emerald-500 hover:text-white transition-colors" onclick="openTab(event, 'cargador')">Detalles del Cargador</button>
+            <button class="tab-button py-2 px-4 rounded-lg font-semibold shadow-md hover:bg-emerald-500 hover:text-white transition-colors" onclick="openTab(event, 'bms')">Integración BMS</button>
+            <button class="tab-button py-2 px-4 rounded-lg font-semibold shadow-md hover:bg-emerald-500 hover:text-white transition-colors" onclick="openTab(event, 'calculos')">Cálculos y Consideraciones</button>
+            <button class="tab-button py-2 px-4 rounded-lg font-semibold shadow-md hover:bg-emerald-500 hover:text-white transition-colors" onclick="openTab(event, 'ia-assistant')">Asistente IA ✨</button>
+            <button class="tab-button py-2 px-4 rounded-lg font-semibold shadow-md hover:bg-emerald-500 hover:text-white transition-colors" onclick="openTab(event, 'conclusion')">Conclusión</button>
+        </nav>
+
+        <main>
+            <section id="resumen" class="tab-content active bg-white p-6 rounded-xl shadow-lg">
+                <h2 class="text-2xl font-semibold text-emerald-700 mb-4">1. Resumen del Sistema</h2>
+                <p class="mb-4 text-neutral-700">Esta sección presenta una visión general del sistema de carga diseñado para la motocicleta eléctrica. El objetivo es asegurar una carga eficiente, segura y que prolongue la vida útil de las baterías. A continuación, se detallan las especificaciones clave del banco de baterías y del cargador seleccionado.</p>
+                
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="bg-stone-50 p-4 rounded-lg shadow">
+                        <h3 class="text-xl font-semibold text-emerald-600 mb-3">Especificaciones del Banco de Baterías</h3>
+                        <ul class="list-disc list-inside text-neutral-700 space-y-1">
+                            <li><strong>Número de Baterías:</strong> 5 unidades</li>
+                            <li><strong>Tipo de Batería:</strong> Plomo-ácido (sellada, AGM o Gel)</li>
+                            <li><strong>Voltaje Nominal por Batería:</strong> 12 VDC</li>
+                            <li><strong>Capacidad Nominal por Batería:</strong> 20 Ah</li>
+                            <li><strong>Configuración:</strong> Conexión en serie</li>
+                            <li class="mt-2 pt-2 border-t border-stone-300"><strong>Voltaje Nominal Total del Banco:</strong> <span class="font-bold text-emerald-700">60 VDC</span></li>
+                            <li><strong>Capacidad Nominal Total del Banco:</strong> <span class="font-bold text-emerald-700">20 Ah</span></li>
+                            <li><strong>Energía Almacenada (Nominal):</strong> <span class="font-bold text-emerald-700">1.2 kWh</span></li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-stone-50 p-4 rounded-lg shadow">
+                        <h3 class="text-xl font-semibold text-emerald-600 mb-3">Cargador Seleccionado</h3>
+                        <img src="https://placehold.co/300x100/E0E0E0/333333?text=Etiqueta+Cargador+120-60V17-24Ah" alt="Etiqueta del Cargador" class="mx-auto mb-3 rounded-md" onerror="this.src='https://placehold.co/300x100/E0E0E0/333333?text=Imagen+no+disponible'; this.onerror=null;">
+                        <ul class="list-disc list-inside text-neutral-700 space-y-1">
+                            <li><strong>Modelo:</strong> 120-60V17-24Ah</li>
+                            <li><strong>Entrada:</strong> ~110V ±10% 50-60Hz (≤260W)</li>
+                            <li><strong>Salida:</strong> <span class="font-bold text-emerald-700">DC 73.5V / 3A</span></li>
+                        </ul>
+                        <p class="mt-3 text-sm text-neutral-600">Este cargador ha sido elegido por su compatibilidad óptima con las especificaciones del banco de baterías.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="cargador" class="tab-content bg-white p-6 rounded-xl shadow-lg">
+                <h2 class="text-2xl font-semibold text-emerald-700 mb-4">2. Detalles del Cargador</h2>
+                <p class="mb-6 text-neutral-700">El cargador modelo 120-60V17-24Ah es un componente crucial del sistema. Su selección se basó en criterios técnicos para asegurar una carga adecuada. A continuación, se exploran su justificación, las etapas de carga automáticas que implementa y los modos de uso recomendados para el usuario.</p>
+
+                <div class="mb-6">
+                    <button onclick="toggleDetails('justificacion-details')" class="w-full text-left py-3 px-4 bg-emerald-50 hover:bg-emerald-100 rounded-lg font-semibold text-emerald-700 transition-colors flex justify-between items-center">
+                        Justificación de la Selección del Cargador
+                        <span class="transform transition-transform details-arrow">&#9662;</span>
+                    </button>
+                    <div id="justificacion-details" class="details-content mt-2 px-4 text-neutral-700 space-y-2">
+                        <p><strong>Compatibilidad de Voltaje:</strong> La salida de 73.5V DC es ideal para baterías de plomo-ácido de 60V, asegurando carga completa.</p>
+                        <p><strong>Compatibilidad de Corriente:</strong> Los 3A de salida están en el rango óptimo (C/10 a C/5) para baterías de 20Ah, promoviendo una carga eficiente y segura.</p>
+                        <p><strong>Compatibilidad de Capacidad:</strong> Diseñado para baterías de 17-24Ah, cubriendo la capacidad de 20Ah del banco.</p>
+                        <p><strong>Tipo de Batería:</strong> Las advertencias del fabricante (gas volátil, ventilación) confirman su adecuación para plomo-ácido.</p>
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                     <h3 class="text-xl font-semibold text-emerald-600 mb-3">Etapas de Carga Automáticas</h3>
+                     <div class="grid md:grid-cols-3 gap-4">
+                        <div id="stage-bulk" class="bg-stone-50 p-4 rounded-lg shadow cursor-pointer hover:shadow-md transition-shadow" onclick="showStageDetails('bulk')">
+                            <h4 class="font-semibold text-emerald-700">Etapa 1: Carga Bulk (Corriente Constante)</h4>
+                            <p class="text-sm text-neutral-600 mt-1">Corriente máxima (3A) hasta alcanzar 73.5V. Carga rápida de la mayor parte de la capacidad.</p>
+                        </div>
+                        <div id="stage-absorption" class="bg-stone-50 p-4 rounded-lg shadow cursor-pointer hover:shadow-md transition-shadow" onclick="showStageDetails('absorption')">
+                            <h4 class="font-semibold text-emerald-700">Etapa 2: Carga de Absorción (Voltaje Constante)</h4>
+                            <p class="text-sm text-neutral-600 mt-1">Voltaje constante a 73.5V, corriente decreciente. Asegura carga al 100%.</p>
+                        </div>
+                        <div id="stage-float" class="bg-stone-50 p-4 rounded-lg shadow cursor-pointer hover:shadow-md transition-shadow" onclick="showStageDetails('float')">
+                            <h4 class="font-semibold text-emerald-700">Etapa 3: Carga de Flotación (Mantenimiento)</h4>
+                            <p class="text-sm text-neutral-600 mt-1">Voltaje reducido/mantenido, corriente mínima. Compensa autodescarga.</p>
+                        </div>
+                     </div>
+                     <div id="stage-details-display" class="mt-4 p-4 bg-emerald-50 rounded-lg text-neutral-700 hidden">
+                        </div>
+                </div>
+                 <div class="mb-6">
+                    <h3 class="text-xl font-semibold text-emerald-600 mb-3">Modos de Carga para el Usuario</h3>
+                     <div class="space-y-3 text-neutral-700">
+                        <p><strong>Carga Profunda (Completa):</strong> Conectar hasta que el indicador cambie a verde (aprox. 7-9 horas). Recomendada tras uso intenso o descargas significativas para mantener la salud de la batería.</p>
+                        <p><strong>Carga Parcial (Recarga):</strong> Cargar por periodos más cortos tras uso moderado. Ayuda a evitar descargas profundas frecuentes, pero se deben permitir ciclos completos periódicamente.</p>
+                     </div>
+                </div>
+            </section>
+
+            <section id="bms" class="tab-content bg-white p-6 rounded-xl shadow-lg">
+                <h2 class="text-2xl font-semibold text-emerald-700 mb-4">3. Integración con el Sistema de Gestión de Baterías (BMS)</h2>
+                <p class="mb-6 text-neutral-700">Un Sistema de Gestión de Baterías (BMS) es crucial para la seguridad y longevidad del banco de baterías. Trabaja en conjunto con el cargador para monitorear y controlar el proceso, previniendo condiciones peligrosas y optimizando el rendimiento. A continuación se describen sus funciones clave y cómo se integra físicamente.</p>
+                
+                <h3 class="text-xl font-semibold text-emerald-600 mb-3">Funciones Clave del BMS</h3>
+                <ul class="space-y-2 mb-6">
+                    <li><button onclick="toggleDetails('bms-monitoreo')" class="w-full text-left py-2 px-3 bg-stone-50 hover:bg-stone-100 rounded-md font-medium text-neutral-700 transition-colors flex justify-between items-center">Monitoreo Individual de Celdas <span class="transform transition-transform details-arrow">&#9662;</span></button>
+                        <div id="bms-monitoreo" class="details-content px-3 text-sm text-neutral-600">Supervisa el voltaje de cada una de las 5 baterías, detectando desbalances o celdas problemáticas que el cargador externo no podría identificar.</div>
+                    </li>
+                    <li><button onclick="toggleDetails('bms-sobrecarga')" class="w-full text-left py-2 px-3 bg-stone-50 hover:bg-stone-100 rounded-md font-medium text-neutral-700 transition-colors flex justify-between items-center">Protección contra Sobrecarga (Nivel de Celda) <span class="transform transition-transform details-arrow">&#9662;</span></button>
+                        <div id="bms-sobrecarga" class="details-content px-3 text-sm text-neutral-600">Desconecta el cargador si alguna batería excede su voltaje máximo seguro (ej. 14.8V para plomo-ácido de 12V), previniendo daños.</div>
+                    </li>
+                     <li><button onclick="toggleDetails('bms-balanceo')" class="w-full text-left py-2 px-3 bg-stone-50 hover:bg-stone-100 rounded-md font-medium text-neutral-700 transition-colors flex justify-between items-center">Balanceo de Celdas <span class="transform transition-transform details-arrow">&#9662;</span></button>
+                        <div id="bms-balanceo" class="details-content px-3 text-sm text-neutral-600">Ayuda a mantener voltajes similares entre las baterías en serie, optimizando la capacidad y vida útil del paquete.</div>
+                    </li>
+                    <li><button onclick="toggleDetails('bms-sobrecorriente')" class="w-full text-left py-2 px-3 bg-stone-50 hover:bg-stone-100 rounded-md font-medium text-neutral-700 transition-colors flex justify-between items-center">Protección Sobrecorriente/Cortocircuito <span class="transform transition-transform details-arrow">&#9662;</span></button>
+                        <div id="bms-sobrecorriente" class="details-content px-3 text-sm text-neutral-600">Interrumpe el circuito si detecta corrientes excesivas o un cortocircuito, protegiendo baterías y cargador.</div>
+                    </li>
+                     <li><button onclick="toggleDetails('bms-temperatura')" class="w-full text-left py-2 px-3 bg-stone-50 hover:bg-stone-100 rounded-md font-medium text-neutral-700 transition-colors flex justify-between items-center">Monitoreo de Temperatura <span class="transform transition-transform details-arrow">&#9662;</span></button>
+                        <div id="bms-temperatura" class="details-content px-3 text-sm text-neutral-600">Un BMS avanzado puede desconectar el cargador si la temperatura de las baterías excede límites seguros durante la carga.</div>
+                    </li>
+                </ul>
+
+                <h3 class="text-xl font-semibold text-emerald-600 mb-3">Diagrama Conceptual de Integración del BMS</h3>
+                <div class="bg-stone-50 p-4 rounded-lg shadow text-center">
+                    <p class="text-neutral-700 mb-2">El BMS se intercala entre el cargador/motocicleta y las baterías:</p>
+                    <div class="flex flex-col sm:flex-row justify-around items-center space-y-4 sm:space-y-0 sm:space-x-4 p-4 text-sm">
+                        <div class="p-3 bg-blue-100 text-blue-700 rounded shadow w-full sm:w-auto">Cargador / Motor</div>
+                        <div class="font-bold text-2xl text-neutral-500">&rarr;</div>
+                        <div class="p-3 bg-emerald-100 text-emerald-700 rounded shadow w-full sm:w-auto">BMS (Control y Monitoreo)</div>
+                        <div class="font-bold text-2xl text-neutral-500">&harr;</div>
+                        <div class="p-3 bg-yellow-100 text-yellow-700 rounded shadow w-full sm:w-auto">Banco de Baterías (5x12V)</div>
+                    </div>
+                     <p class="mt-2 text-xs text-neutral-600">El BMS monitorea cada batería individualmente.</p>
+                </div>
+            </section>
+
+            <section id="calculos" class="tab-content bg-white p-6 rounded-xl shadow-lg">
+                <h2 class="text-2xl font-semibold text-emerald-700 mb-4">4. Cálculos y Consideraciones Adicionales</h2>
+                <p class="mb-6 text-neutral-700">Esta sección presenta cálculos importantes relacionados con la eficiencia del cargador y estimaciones del tiempo de carga, además de consideraciones de seguridad y mantenimiento esenciales para el sistema.</p>
+
+                <div class="grid md:grid-cols-2 gap-6 mb-6">
+                    <div class="bg-stone-50 p-4 rounded-lg shadow">
+                        <h3 class="text-xl font-semibold text-emerald-600 mb-3">Eficiencia Energética del Cargador</h3>
+                        <p class="text-neutral-700">Potencia de Salida Máx: <span class="font-bold">220.5 W</span> (73.5V * 3A)</p>
+                        <p class="text-neutral-700">Potencia de Entrada Máx: <span class="font-bold">&le;260 W</span></p>
+                        <p class="text-neutral-700 mt-2">Eficiencia Estimada: <span class="font-bold text-emerald-700 text-lg">~84.8%</span></p>
+                        <p class="text-sm text-neutral-600 mt-1">Una buena eficiencia indica una conversión efectiva de energía.</p>
+                    </div>
+                    <div class="bg-stone-50 p-4 rounded-lg shadow">
+                        <h3 class="text-xl font-semibold text-emerald-600 mb-3">Pérdidas en Carga de Batería</h3>
+                         <p class="text-neutral-700">Eficiencia de carga (plomo-ácido): ~80-90%</p>
+                         <p class="text-neutral-700">Asumiendo 85%: Para almacenar 1.2 kWh, el cargador debe entregar ~<span class="font-bold">1.41 kWh</span>.</p>
+                    </div>
+                </div>
+
+                <div class="bg-stone-50 p-4 rounded-lg shadow mb-6">
+                    <h3 class="text-xl font-semibold text-emerald-600 mb-3">Calculador de Tiempo de Carga Estimado</h3>
+                    <p class="text-sm text-neutral-600 mb-3">Selecciona el estado de carga inicial (SoC) de la batería para estimar el tiempo de carga hasta el 100%. Considera 20Ah de capacidad nominal y 3A de corriente de carga.</p>
+                    <div class="flex flex-col sm:flex-row items-center gap-4 mb-4">
+                        <label for="socInicial" class="font-medium text-neutral-700">SoC Inicial (%):</label>
+                        <input type="number" id="socInicial" min="0" max="99" value="20" class="p-2 border border-stone-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 w-24">
+                        <button onclick="calcularTiempoCarga()" class="bg-emerald-600 text-white py-2 px-4 rounded-lg font-semibold shadow-md hover:bg-emerald-700 transition-colors">Calcular Tiempo</button>
+                    </div>
+                    <p id="tiempoCargaResultado" class="text-neutral-700 font-semibold"></p>
+                    <div class="chart-container mt-4 h-[200px] sm:h-[250px]">
+                        <canvas id="chartTiempoCarga"></canvas>
+                    </div>
+                </div>
+                
+                <div class="bg-stone-50 p-4 rounded-lg shadow">
+                    <h3 class="text-xl font-semibold text-emerald-600 mb-3">Consideraciones de Seguridad y Mantenimiento</h3>
+                    <ul class="list-disc list-inside text-neutral-700 space-y-2">
+                        <li><strong>Ventilación Adecuada:</strong> Esencial durante la carga para disipar gas hidrógeno (inflamable). No cargar en espacios cerrados sin ventilación.</li>
+                        <li><strong>Conexión/Desconexión Segura:</strong> Apagar el cargador de la red eléctrica antes de conectar o desconectar las baterías.</li>
+                        <li><strong>Límite de Carga:</strong> No exceder 24 horas continuas de carga. Si el indicador no cambia a verde en un tiempo razonable (ej. 10-12h), investigar.</li>
+                        <li><strong>No Desarmar:</strong> El cargador contiene componentes de alta tensión. No intentar reparaciones internas.</li>
+                        <li><strong>Protección Ambiental:</strong> Usar en interiores, proteger de la lluvia y la humedad.</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section id="ia-assistant" class="tab-content bg-white p-6 rounded-xl shadow-lg">
+                <h2 class="text-2xl font-semibold text-emerald-700 mb-4">5. Asistente IA ✨</h2>
+                <p class="mb-6 text-neutral-700">Explora las capacidades de inteligencia artificial para obtener información y consejos sobre el cuidado de tu batería. Puedes preguntar al experto o generar consejos de mantenimiento personalizados.</p>
+
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="bg-stone-50 p-4 rounded-lg shadow flex flex-col h-96">
+                        <h3 class="text-xl font-semibold text-emerald-600 mb-3">Pregunta al Experto en Baterías ✨</h3>
+                        <div id="chat-display" class="flex-grow bg-white border border-stone-300 rounded-md p-3 overflow-y-auto mb-3 flex flex-col">
+                            <div class="chat-message ai">¡Hola! Soy tu asistente de baterías. ¿En qué puedo ayudarte hoy?</div>
+                        </div>
+                        <div class="flex">
+                            <input type="text" id="chat-input" class="flex-grow p-2 border border-stone-300 rounded-l-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500" placeholder="Haz tu pregunta aquí...">
+                            <button onclick="askGemini()" class="bg-emerald-600 text-white py-2 px-4 rounded-r-lg font-semibold shadow-md hover:bg-emerald-700 transition-colors">Enviar</button>
+                        </div>
+                        <div id="chat-loading" class="mt-2 text-center hidden">
+                            <div class="loading-spinner mx-auto"></div>
+                            <p class="text-sm text-neutral-500">Pensando...</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-stone-50 p-4 rounded-lg shadow flex flex-col h-96">
+                        <h3 class="text-xl font-semibold text-emerald-600 mb-3">Consejos de Mantenimiento Personalizados ✨</h3>
+                        <p class="text-sm text-neutral-600 mb-3">Genera consejos de mantenimiento específicos para baterías de plomo-ácido, basados en las mejores prácticas.</p>
+                        <button onclick="generateMaintenanceTips()" class="bg-emerald-600 text-white py-2 px-4 rounded-lg font-semibold shadow-md hover:bg-emerald-700 transition-colors mb-3">Generar Consejos</button>
+                        <div id="tips-display" class="flex-grow bg-white border border-stone-300 rounded-md p-3 overflow-y-auto text-neutral-700">
+                            <p class="text-sm text-neutral-500">Haz clic en "Generar Consejos" para obtener recomendaciones.</p>
+                        </div>
+                        <div id="tips-loading" class="mt-2 text-center hidden">
+                            <div class="loading-spinner mx-auto"></div>
+                            <p class="text-sm text-neutral-500">Generando consejos...</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="conclusion" class="tab-content bg-white p-6 rounded-xl shadow-lg">
+                <h2 class="text-2xl font-semibold text-emerald-700 mb-4">6. Conclusión y Recomendaciones</h2>
+                <p class="mb-4 text-neutral-700">El diseño del centro de carga, utilizando el cargador modelo 120-60V17-24Ah, es una solución robusta y adecuada para el banco de baterías de 60V 20Ah de la motocicleta eléctrica. Las especificaciones del cargador se alinean perfectamente con los requerimientos de las baterías de plomo-ácido, asegurando una carga eficiente y segura a través de sus etapas automáticas de Bulk, Absorción y Flotación.</p>
+                <p class="mb-4 text-neutral-700">La integración con un Sistema de Gestión de Baterías (BMS) es una recomendación crítica. El BMS añade una capa indispensable de seguridad y optimización, mediante el monitoreo individual de celdas, protección contra sobrecarga/sobredescarga, balanceo de celdas, y protección contra sobrecorriente y temperatura. Esta sinergia entre el cargador y el BMS es fundamental para maximizar la vida útil de las baterías y garantizar la seguridad del usuario.</p>
+                <p class="mb-4 text-neutral-700">Se recomienda al usuario seguir las pautas de carga (profunda y parcial) y las consideraciones de seguridad, especialmente en lo referente a la ventilación durante la carga. Con una implementación cuidadosa y un uso adecuado, este centro de carga proporcionará un rendimiento fiable y duradero para la motocicleta eléctrica.</p>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // Lógica de Pestañas
+        function openTab(evt, tabName) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tab-content");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+                tabcontent[i].classList.remove("active");
+            }
+            tablinks = document.getElementsByClassName("tab-button");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].classList.remove("active");
+            }
+            document.getElementById(tabName).style.display = "block";
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.classList.add("active");
+        }
+        // Abrir la primera pestaña por defecto
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelector('.tab-button').click();
+        });
+
+        // Lógica para Expandir/Colapsar Detalles
+        function toggleDetails(elementId) {
+            const content = document.getElementById(elementId);
+            const arrow = event.currentTarget.querySelector('.details-arrow');
+            content.classList.toggle('open');
+            if (content.classList.contains('open')) {
+                arrow.innerHTML = '&#9652;'; // Flecha arriba
+                arrow.classList.add('rotate-180');
+
+            } else {
+                arrow.innerHTML = '&#9662;'; // Flecha abajo
+                arrow.classList.remove('rotate-180');
+            }
+        }
+
+        // Lógica para detalles de etapas de carga
+        const stageDetailsText = {
+            bulk: "Durante la etapa Bulk, el cargador suministra su corriente máxima constante (3A) al banco de baterías. El voltaje del banco aumenta progresivamente. Esta fase es responsable de reponer la mayor parte de la energía de la batería y continúa hasta que el voltaje del banco alcanza los 73.5V.",
+            absorption: "Una vez que el voltaje del banco alcanza los 73.5V, el cargador entra en la etapa de Absorción. Mantiene este voltaje constante, mientras que la corriente de carga comienza a disminuir gradualmente a medida que la resistencia interna de la batería aumenta. Esta etapa asegura que la batería alcance una carga completa del 100% sin sobrecargarla.",
+            float: "Cuando la corriente de carga en la etapa de absorción cae a un nivel muy bajo, indica que la batería está completamente cargada. El cargador entonces cambia a la etapa de Flotación. En esta fase, el voltaje se reduce ligeramente (o se mantiene el voltaje de absorción con una corriente mínima) para mantener la batería en su estado de carga máxima, compensando la autodescarga natural y previniendo el daño por sobrecarga a largo plazo."
+        };
+        let lastSelectedStage = null;
+
+        function showStageDetails(stageKey) {
+            const detailsDisplay = document.getElementById('stage-details-display');
+            const stageElement = document.getElementById('stage-' + stageKey);
+
+            if (lastSelectedStage) {
+                lastSelectedStage.classList.remove('ring-2', 'ring-emerald-500');
+            }
+
+            if (detailsDisplay.textContent === stageDetailsText[stageKey] && detailsDisplay.classList.contains('block')) {
+                detailsDisplay.classList.add('hidden');
+                detailsDisplay.classList.remove('block');
+                lastSelectedStage = null;
+            } else {
+                detailsDisplay.textContent = stageDetailsText[stageKey];
+                detailsDisplay.classList.remove('hidden');
+                detailsDisplay.classList.add('block');
+                stageElement.classList.add('ring-2', 'ring-emerald-500');
+                lastSelectedStage = stageElement;
+            }
+        }
+
+        // Lógica para Calculador de Tiempo de Carga
+        let chartTiempoCarga;
+        function calcularTiempoCarga() {
+            const socInicial = parseFloat(document.getElementById('socInicial').value);
+            const resultadoP = document.getElementById('tiempoCargaResultado');
+            
+            if (isNaN(socInicial) || socInicial < 0 || socInicial >= 100) {
+                resultadoP.textContent = "Por favor, ingrese un SoC inicial válido (0-99%).";
+                if(chartTiempoCarga) chartTiempoCarga.destroy();
+                return;
+            }
+
+            const capacidadNominalAh = 20;
+            const corrienteCargaA = 3;
+            const eficienciaCargaBat = 0.85; // Asumido 85%
+            const factorAjusteAbsorcion = 1.25; // Factor para incluir tiempo de absorción (ajustable)
+
+            const ahACargar = capacidadNominalAh * (1 - socInicial / 100);
+            const ahRequeridosCargador = ahACargar / eficienciaCargaBat;
+            const tiempoBulkT = ahRequeridosCargador / corrienteCargaA;
+            const tiempoTotalEstimadoH = tiempoBulkT * factorAjusteAbsorcion;
+
+            resultadoP.innerHTML = `Para un SoC inicial de ${socInicial}%: <br>
+                                    Ah a reponer: ${ahACargar.toFixed(2)} Ah <br>
+                                    Tiempo estimado de carga completa: <strong class="text-emerald-700">${tiempoTotalEstimadoH.toFixed(2)} horas</strong>.`;
+            
+            actualizarGraficoCarga(socInicial, tiempoTotalEstimadoH);
+        }
+
+        function actualizarGraficoCarga(socInicial, tiempoTotalEstimadoH) {
+            const ctx = document.getElementById('chartTiempoCarga').getContext('2d');
+            
+            const tiempoRestante = tiempoTotalEstimadoH;
+            const tiempoYaTranscurridoEstimado = (socInicial / 100) * (tiempoTotalEstimadoH / (1 - socInicial/100)) ; // Estimación muy burda
+
+            if (chartTiempoCarga) {
+                chartTiempoCarga.destroy();
+            }
+
+            chartTiempoCarga = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Progreso de Carga Estimado'],
+                    datasets: [
+                        {
+                            label: 'Cargado (%)',
+                            data: [socInicial],
+                            backgroundColor: 'rgba(16, 185, 129, 0.6)', // emerald-500
+                            borderColor: 'rgba(5, 150, 105, 1)', // emerald-600
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Pendiente (%)',
+                            data: [100 - socInicial],
+                            backgroundColor: 'rgba(209, 213, 219, 0.6)', // gray-300
+                            borderColor: 'rgba(156, 163, 175, 1)', // gray-400
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            stacked: true,
+                            max: 100,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + "%"
+                                }
+                            }
+                        },
+                        y: {
+                            stacked: true,
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: `Tiempo Total Estimado: ${tiempoTotalEstimadoH.toFixed(1)}h para 100%`
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.x !== null) {
+                                        label += context.parsed.x.toFixed(1) + '%';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+         // Calcular al cargar la página con el valor por defecto
+        document.addEventListener('DOMContentLoaded', () => {
+            calcularTiempoCarga();
+        });
+
+        // Lógica para Asistente IA (Gemini API)
+        const chatHistory = []; // Almacena el historial del chat
+        const chatDisplay = document.getElementById('chat-display');
+        const chatInput = document.getElementById('chat-input');
+        const chatLoading = document.getElementById('chat-loading');
+        const tipsDisplay = document.getElementById('tips-display');
+        const tipsLoading = document.getElementById('tips-loading');
+
+        async function askGemini() {
+            const userMessage = chatInput.value.trim();
+            if (!userMessage) return;
+
+            // Mostrar mensaje del usuario
+            appendMessage(userMessage, 'user');
+            chatInput.value = '';
+            chatLoading.classList.remove('hidden');
+            chatDisplay.scrollTop = chatDisplay.scrollHeight; // Scroll al final
+
+            chatHistory.push({ role: "user", parts: [{ text: userMessage }] });
+
+            const payload = { contents: chatHistory };
+            const apiKey = ""; // La API key se proporciona en tiempo de ejecución por Canvas
+
+            try {
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const aiResponse = result.candidates[0].content.parts[0].text;
+                    appendMessage(aiResponse, 'ai');
+                    chatHistory.push({ role: "model", parts: [{ text: aiResponse }] });
+                } else {
+                    appendMessage("Lo siento, no pude obtener una respuesta. Intenta de nuevo.", 'ai');
+                }
+            } catch (error) {
+                console.error("Error al llamar a Gemini API:", error);
+                appendMessage("Hubo un error al conectar con el asistente. Por favor, inténtalo más tarde.", 'ai');
+            } finally {
+                chatLoading.classList.add('hidden');
+                chatDisplay.scrollTop = chatDisplay.scrollHeight; // Scroll al final
+            }
+        }
+
+        function appendMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('chat-message', sender, 'p-2', 'rounded-lg', 'mb-2');
+            messageDiv.textContent = text;
+            chatDisplay.appendChild(messageDiv);
+        }
+
+        async function generateMaintenanceTips() {
+            tipsLoading.classList.remove('hidden');
+            tipsDisplay.innerHTML = ''; // Limpiar tips anteriores
+            tipsDisplay.scrollTop = tipsDisplay.scrollHeight;
+
+            const prompt = "Genera 5 consejos de mantenimiento concisos y prácticos para baterías de plomo-ácido de motocicleta eléctrica, enfocándote en prolongar su vida útil y asegurar su rendimiento. Incluye aspectos como carga, almacenamiento y limpieza.";
+
+            const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] };
+            const apiKey = ""; // La API key se proporciona en tiempo de ejecución por Canvas
+
+            try {
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const tips = result.candidates[0].content.parts[0].text;
+                    tipsDisplay.innerHTML = tips.replace(/\n/g, '<br>'); // Reemplazar saltos de línea por <br>
+                } else {
+                    tipsDisplay.textContent = "Lo siento, no pude generar consejos. Intenta de nuevo.";
+                }
+            } catch (error) {
+                console.error("Error al llamar a Gemini API para consejos:", error);
+                tipsDisplay.textContent = "Hubo un error al generar los consejos. Por favor, inténtalo más tarde.";
+            } finally {
+                tipsLoading.classList.add('hidden');
+                tipsDisplay.scrollTop = tipsDisplay.scrollHeight;
+            }
+        }
+    </script>
+</body>
+</html>
