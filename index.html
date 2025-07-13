@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Centro de Carga para Motocicleta Eléctrica - SPA Interactiva v3</title>
+    <title>Centro de Carga para Motocicleta Eléctrica - SPA Interactiva v5</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -71,7 +71,6 @@
         <nav class="mb-6 flex flex-wrap justify-center gap-2 sm:gap-3">
             <button class="tab-button py-2 px-4 rounded-lg font-semibold shadow-md hover:bg-emerald-500 hover:text-white transition-colors active" onclick="openTab(event, 'resumen')">Resumen del Sistema</button>
             <button class="tab-button py-2 px-4 rounded-lg font-semibold shadow-md hover:bg-emerald-500 hover:text-white transition-colors" onclick="openTab(event, 'cargador')">Detalles del Cargador</button>
-            <button class="tab-button py-2 px-4 rounded-lg font-semibold shadow-md hover:bg-emerald-500 hover:text-white transition-colors" onclick="openTab(event, 'bms')">Integración BMS</button>
             <button class="tab-button py-2 px-4 rounded-lg font-semibold shadow-md hover:bg-emerald-500 hover:text-white transition-colors" onclick="openTab(event, 'calculos')">Cálculos y Herramientas</button>
             <button class="tab-button py-2 px-4 rounded-lg font-semibold shadow-md hover:bg-emerald-500 hover:text-white transition-colors" onclick="openTab(event, 'conclusion')">Conclusión</button>
         </nav>
@@ -154,63 +153,10 @@
                 </div>
             </section>
 
-            <section id="bms" class="tab-content bg-white p-6 rounded-xl shadow-lg">
-                <h2 class="text-2xl font-semibold text-emerald-700 mb-4">3. Integración con el Sistema de Gestión de Baterías (BMS)</h2>
-                <p class="mb-6 text-neutral-700">Un Sistema de Gestión de Baterías (BMS) es crucial para la seguridad y longevidad del banco de baterías. Trabaja en conjunto con el cargador para monitorear y controlar el proceso, previniendo condiciones peligrosas y optimizando el rendimiento. A continuación se describen sus funciones clave y cómo se integra físicamente.</p>
-                
-                <h3 class="text-xl font-semibold text-emerald-600 mb-3">Funciones Clave del BMS</h3>
-                <ul class="space-y-2 mb-6">
-                    <li><button onclick="toggleDetails('bms-monitoreo')" class="w-full text-left py-2 px-3 bg-stone-50 hover:bg-stone-100 rounded-md font-medium text-neutral-700 transition-colors flex justify-between items-center">Monitoreo Individual de Celdas <span class="transform transition-transform details-arrow">&#9662;</span></button>
-                        <div id="bms-monitoreo" class="details-content px-3 text-sm text-neutral-600">El BMS mide y compara el voltaje de cada una de las 5 baterías individuales en el banco. Esto es crucial para identificar desviaciones y celdas débiles o dañadas que podrían afectar el rendimiento general y la seguridad, algo que un cargador externo (que solo ve el voltaje total) no puede hacer.</div>
-                    </li>
-                    <li><button onclick="toggleDetails('bms-sobrecarga')" class="w-full text-left py-2 px-3 bg-stone-50 hover:bg-stone-100 rounded-md font-medium text-neutral-700 transition-colors flex justify-between items-center">Protección contra Sobrecarga (Nivel de Celda) <span class="transform transition-transform details-arrow">&#9662;</span></button>
-                        <div id="bms-sobrecarga" class="details-content px-3 text-sm text-neutral-600">Si el voltaje de cualquiera de las baterías individuales supera un umbral seguro (aproximadamente 14.4V - 14.8V para una batería de plomo-ácido de 12V), el BMS interrumpe el flujo de corriente del cargador. Esto previene el sobrecalentamiento, la generación excesiva de gases y el daño irreversible a la celda y al banco completo.</div>
-                    </li>
-                     <li><button onclick="toggleDetails('bms-balanceo')" class="w-full text-left py-2 px-3 bg-stone-50 hover:bg-stone-100 rounded-md font-medium text-neutral-700 transition-colors flex justify-between items-center">Balanceo de Celdas <span class="transform transition-transform details-arrow">&#9662;</span></button>
-                        <div id="bms-balanceo" class="details-content px-3 text-sm text-neutral-600">Con el tiempo, las celdas en un banco en serie pueden desequilibrarse, con algunas cargándose más o menos que otras. El balanceo de celdas asegura que todas las baterías mantengan voltajes similares. Esto maximiza la capacidad utilizable del banco, prolonga la vida útil de cada batería y evita que una celda débil limite el rendimiento de todo el conjunto.</div>
-                    </li>
-                    <li><button onclick="toggleDetails('bms-sobrecorriente')" class="w-full text-left py-2 px-3 bg-stone-50 hover:bg-stone-100 rounded-md font-medium text-neutral-700 transition-colors flex justify-between items-center">Protección Sobrecorriente/Cortocircuito <span class="transform transition-transform details-arrow">&#9662;</span></button>
-                        <div id="bms-sobrecorriente" class="details-content px-3 text-sm text-neutral-600">Detecta y reacciona ante corrientes excesivas durante la carga o descarga, así como ante cortocircuitos accidentales. En estas situaciones, el BMS desconecta rápidamente el circuito para proteger las baterías de un calentamiento excesivo, daños internos, incendios o explosiones, y también salvaguarda el cargador y otros componentes eléctricos.</div>
-                    </li>
-                     <li><button onclick="toggleDetails('bms-temperatura')" class="w-full text-left py-2 px-3 bg-stone-50 hover:bg-stone-100 rounded-md font-medium text-neutral-700 transition-colors flex justify-between items-center">Monitoreo de Temperatura <span class="transform transition-transform details-arrow">&#9662;</span></button>
-                        <div id="bms-temperatura" class="details-content px-3 text-sm text-neutral-600">Sensores de temperatura integrados monitorean constantemente el calor generado en el banco de baterías. Si la temperatura excede un umbral crítico (por ejemplo, debido a una sobrecarga o un uso intensivo), el BMS puede detener la carga o descarga para prevenir el sobrecalentamiento, el 'thermal runaway' (embalamiento térmico) y el deterioro acelerado de la vida útil de las baterías.</div>
-                    </li>
-                </ul>
-
-                <h3 class="text-xl font-semibold text-emerald-600 mb-3">Diagrama Conceptual de Integración del BMS</h3>
-                <div class="bg-stone-50 p-4 rounded-lg shadow text-center">
-                    <p class="text-neutral-700 mb-2">El BMS se intercala entre el cargador/motocicleta y las baterías:</p>
-                    <div class="flex flex-col sm:flex-row justify-around items-center space-y-4 sm:space-y-0 sm:space-x-4 p-4 text-sm">
-                        <div class="p-3 bg-blue-100 text-blue-700 rounded shadow w-full sm:w-auto">Cargador / Motor</div>
-                        <div class="font-bold text-2xl text-neutral-500">&rarr;</div>
-                        <div class="font-bold text-2xl text-neutral-500">&harr;</div>
-                        <div class="p-3 bg-emerald-100 text-emerald-700 rounded shadow w-full sm:w-auto">BMS (Control y Monitoreo)</div>
-                        <div class="font-bold text-2xl text-neutral-500">&harr;</div>
-                        <div class="p-3 bg-yellow-100 text-yellow-700 rounded shadow w-full sm:w-auto">Banco de Baterías (5x12V)</div>
-                    </div>
-                     <p class="mt-2 text-xs text-neutral-600">El BMS monitorea cada batería individualmente.</p>
-                </div>
-            </section>
-
             <section id="calculos" class="tab-content bg-white p-6 rounded-xl shadow-lg">
-                <h2 class="text-2xl font-semibold text-emerald-700 mb-4">4. Cálculos y Herramientas Interactivas</h2>
-                <p class="mb-6 text-neutral-700">Esta sección presenta cálculos importantes relacionados con la eficiencia del cargador y estimaciones del tiempo de carga, además de herramientas interactivas para comprender mejor el uso de tu batería.</p>
-
-                <div class="grid md:grid-cols-2 gap-6 mb-6">
-                    <div class="bg-stone-50 p-4 rounded-lg shadow">
-                        <h3 class="text-xl font-semibold text-emerald-600 mb-3">Eficiencia Energética del Cargador</h3>
-                        <p class="text-neutral-700">Potencia de Salida Máx: <span class="font-bold">220.5 W</span> (73.5V * 3A)</p>
-                        <p class="text-neutral-700">Potencia de Entrada Máx: <span class="font-bold">&le;260 W</span></p>
-                        <p class="text-neutral-700 mt-2">Eficiencia Estimada: <span class="font-bold text-emerald-700 text-lg">~84.8%</span></p>
-                        <p class="text-sm text-neutral-600 mt-1">Una buena eficiencia indica una conversión efectiva de energía.</p>
-                    </div>
-                    <div class="bg-stone-50 p-4 rounded-lg shadow">
-                        <h3 class="text-xl font-semibold text-emerald-600 mb-3">Pérdidas en Carga de Batería</h3>
-                         <p class="text-neutral-700">Eficiencia de carga (plomo-ácido): ~80-90%</p>
-                         <p class="text-neutral-700">Asumiendo 85%: Para almacenar 1.2 kWh, el cargador debe entregar ~<span class="font-bold">1.41 kWh</span>.</p>
-                    </div>
-                </div>
-
+                <h2 class="text-2xl font-semibold text-emerald-700 mb-4">3. Cálculos y Herramientas Interactivas</h2>
+                <p class="mb-6 text-neutral-700">Esta sección presenta cálculos importantes relacionados con estimaciones del tiempo y costo de carga, además de herramientas interactivas para comprender mejor el uso y mantenimiento de tu batería.</p>
+                
                 <div class="bg-stone-50 p-4 rounded-lg shadow mb-6">
                     <h3 class="text-xl font-semibold text-emerald-600 mb-3">Calculador de Tiempo y Costo de Carga Estimado</h3>
                     <p class="text-sm text-neutral-600 mb-3">Selecciona el estado de carga inicial (SoC) de la batería para estimar el tiempo, costo y energía consumida para cargar hasta el 100%. Considera 20Ah de capacidad nominal y 3A de corriente de carga.</p>
@@ -275,9 +221,8 @@
             </section>
 
             <section id="conclusion" class="tab-content bg-white p-6 rounded-xl shadow-lg">
-                <h2 class="text-2xl font-semibold text-emerald-700 mb-4">5. Conclusión y Recomendaciones</h2>
+                <h2 class="text-2xl font-semibold text-emerald-700 mb-4">4. Conclusión y Recomendaciones</h2>
                 <p class="mb-4 text-neutral-700">El diseño del centro de carga, utilizando el cargador modelo 120-60V17-24Ah, es una solución robusta y adecuada para el banco de baterías de 60V 20Ah de la motocicleta eléctrica. Las especificaciones del cargador se alinean perfectamente con los requerimientos de las baterías de plomo-ácido, asegurando una carga eficiente y segura a través de sus etapas automáticas de Bulk, Absorción y Flotación.</p>
-                <p class="mb-4 text-neutral-700">La integración con un Sistema de Gestión de Baterías (BMS) es una recomendación crítica. El BMS añade una capa indispensable de seguridad y optimización, mediante el monitoreo individual de celdas, protección contra sobrecarga/sobredescarga, balanceo de celdas, y protección contra sobrecorriente y temperatura. Esta sinergia entre el cargador y el BMS es fundamental para maximizar la vida útil de las baterías y garantizar la seguridad del usuario.</p>
                 <p class="mb-4 text-neutral-700">Se recomienda al usuario seguir las pautas de carga (profunda y parcial) y las consideraciones de seguridad, especialmente en lo referente a la ventilación durante la carga. Con una implementación cuidadosa y un uso adecuado, este centro de carga proporcionará un rendimiento fiable y duradero para la motocicleta eléctrica.</p>
             </section>
         </main>
